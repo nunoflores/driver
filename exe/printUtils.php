@@ -45,7 +45,8 @@ function printApplyRatingTable($lp, $user) {
 	return $result;
 }
 
-// printsout the results of the an LPs search
+// prints out the results of the an LPs search
+// TODO: deprecate this one to ...WithPreviewer
 function buildSearchResultsPrintOut($results, $tagsSearched, $count=true, $applyRating=true, $match=0, $target='', $callback='') {
 	//print_r($results);
 	if (count($results) == 0) {
@@ -88,6 +89,7 @@ function buildSearchResultsPrintOut($results, $tagsSearched, $count=true, $apply
 }
 
 // prints out the results of the an LPs search with a previewer
+// TODO: override "...WithoutPreviewer"
 function buildSearchResultsPrintOutWithPreviewer($results, $tagsSearched, $count=true, $applyRating=true, $match=0, $target='', $callback='') {
 
 	// no results
