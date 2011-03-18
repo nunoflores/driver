@@ -13,7 +13,6 @@
 	require_once(DOKU_INC.'inc/parserutils.php');
 
 	$id = $_REQUEST['pageid'];
-	if (!isset($id)) die;
 
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php echo $conf['lang']?>" lang="<?php echo $conf['lang']?>" dir="ltr">
@@ -24,7 +23,13 @@
   </head>
 <body>
 	<div id='page' class='dokuwiki'>
-	<?php print p_wiki_xhtml($id); ?>
+	<?php
+		if (!isset($id)) {
+			print '<center><img src="'.DOKU_BASE.'lib/plugins/driver/exe/nopreview.png'.'"></center>';
+			return;
+		}; 
+		print p_wiki_xhtml($id); 
+	?>
 	</div>
 </body>
 </html>	

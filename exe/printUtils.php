@@ -87,5 +87,93 @@ function buildSearchResultsPrintOut($results, $tagsSearched, $count=true, $apply
 	}
 }
 
+// prints out the results of the an LPs search with a previewer
+function buildSearchResultsPrintOutWithPreviewer($results, $tagsSearched, $count=true, $applyRating=true, $match=0, $target='', $callback='') {
+
+	// no results
+	if (count($results) == 0) {
+		if ($count) print '<b>Found 0 learning paths.<br/>';
+		return;
+	}
+
+	// results count
+	if ($count) print 'Found <b>'.count($results).'</b> learning paths.<br/>';
+
+	// getting logged in user to check rating
+	$user = $_SESSION[DOKU_COOKIE]['auth']['user'];
+
+    // produce output
+	$resultsCounter = 0;
+	foreach ($results as $contents) {
+	
+	    // style for exact match found
+		$isMatch='';
+		if ($match == $contents['id']) $isMatch='style="border: 2px solid #333333"';
+	
+	    // processing resulting path into an array of metadata.
+		$pages = processTrailArrayForPrinting($contents['path']);
+	
+	    // composing result line using an html table
+		print '<table cellpadding=0 cellspacing=0 width=100% style="border-bottom:1px solid #aaaaaa">';
+		
+		print '<tr>';
+		
+		// toggle previewer 
+		print '<td>';
+		print '<input style="font-size:9px" id="previewButton'.$resultsCounter.'"';
+		print ' type="button" class="button" value="Show Previewer"';
+		print ' onClick="togglePreviewer(effect'.$resultsCounter.', previewButton'.$resultsCounter.')">';
+		print '</td>';
+			
+		// if user can rate result is enabled ($applyRating)
+		if ($applyRating) {
+			print '<td>';
+			print '<form action="applyRating.php">';
+			print printApplyRatingTable($contents['id'], $user);
+			print '</form></td></tr>';
+		}
+	
+		print '</tr>';
+		
+		// path printing
+		print '<tr><td colspan=2><div class="searchResultBar" '.$isMatch.'>';
+		foreach ($pages as $page) 
+			print printTrailPage($page, $target, $callback, 'preview'.$resultsCounter);	
+		print '</div></td></tr>';	
+		
+		// printing tags
+		print '<tr><td><div style="font-size:9px;padding-bottom:5px">tags: ';
+
+		$tags = explode(" ", trim($contents['tags']));
+		foreach ($tags as $tag) {
+			// highlight tags if match searched
+			if (array_search($tag, $tagsSearched) > -1) {
+				print '<b>'.$tag.'</b> ';
+			} else {
+				print $tag.' ';
+
+			}
+		}
+		
+		// printing overall rating
+		print '</div></td><td align=right style="padding-bottom:5px">';
+		print printShowRatingTable($contents['id'],driverdb_getRating($contents['id']));	
+		print '</td></tr>';
+		
+		// printing previewer (hidden)
+		print '<tr><td id="td-effect" colspan=2>
+			<div id="effect'.$resultsCounter.'" class="effect">
+				<iframe id="preview'.$resultsCounter.'" name="preview" class="preview">
+				</iframe>
+			</div>
+			</td></tr>';
+		
+		print '</table>';
+		
+		$resultsCounter++;
+	}
+}
+
+
 
 ?>

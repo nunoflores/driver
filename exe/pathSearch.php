@@ -51,14 +51,14 @@ $availableTags = substr($availableTags, 0, -1); // remove last comma
 	<script src='<?php print $path ?>plugins/star-rating/jquery.MetaData.js' type="text/javascript" language="javascript"></script>
 	<script src='<?php print $path ?>plugins/star-rating/jquery.rating.js' type="text/javascript" language="javascript"></script>
 	
-    <?php //tpl_metaheaders() ?>
 	<style>
-		#effect {
-			width: 500px;
+		.effect {
+			width: 100%;
 			height: 300px;
+			display:none;
 		}
 		.preview {
-			width: 500px;
+			width: 100%;
 			height: 300px;	
 			border=0px;		
  		}
@@ -85,12 +85,26 @@ $availableTags = substr($availableTags, 0, -1); // remove last comma
 			});			
 		}
 			
-		function onPreviewPage(pageid) {
+		function onPreviewPage(previewer, pageid) {
 			$.post('previewPage.php', {pageid: pageid}, function(data) {
-				document.getElementById("preview").contentDocument.body.innerHTML="";
-				document.getElementById("preview").contentDocument.write(data);					
+				document.getElementById(previewer).contentDocument.body.innerHTML="";
+				document.getElementById(previewer).contentDocument.write(data);					
 			});
 			return false;
+		}
+		
+		function slidingPreviewer(id) {
+				$(id).toggle( "slide", {direction: 'up'}, 200);
+		}
+		
+		function togglePreviewer(div, button) {
+				slidingPreviewer(div);
+				var label = button.value;
+				if (label == 'Show Previewer') {
+					button.value = 'Hide Previewer';
+				} else {
+					button.value = 'Show Previewer';
+				}
 		}
 		
 		$(function() {
@@ -132,24 +146,7 @@ $availableTags = substr($availableTags, 0, -1); // remove last comma
 						this.value = terms.join( " " );
 						return false;
 					}
-				});
-				
-			function runEffect() {
-					$( "#effect" ).toggle( "slide", {direction: 'right'}, 200);
-				};
-			
-			$( "#previewButton" ).click(function() {
-					runEffect();
-					var label = document.getElementById("previewButton").value;
-					if (label == 'Show Previewer') {
-						document.getElementById("previewButton").value = 'Hide Previewer';
-					} else {
-						document.getElementById("previewButton").value = 'Show Previewer';
-					}
-					return false;
-				});
-
-			$( "#effect" ).hide();		
+				});				
 		});
 		</script>
     <link rel="shortcut icon" href="<?php echo DOKU_TPL?>images/favicon.ico" />
@@ -163,7 +160,6 @@ $availableTags = substr($availableTags, 0, -1); // remove last comma
 		<label for="tags">Tags: </label>
 		<input id="tags" name="tags" size="50" />
 		<input id="searchButton" type="submit" value="Search"/>
-		<input id="previewButton" type="button" class="button" value="Show Previewer">
 		</form>
 	</div>
 	<hr>
@@ -176,15 +172,12 @@ $availableTags = substr($availableTags, 0, -1); // remove last comma
 				print "no results yet...";
 			} else {
 				$tags = $_REQUEST['tags'];
+				print '<h3>Search results for "'.trim($tags).'"</h3>';
 				$tagset = explode(' ',trim($tags));
-				buildSearchResultsPrintOut(driverdb_searchLPs($tagset),$tagset,true,true,0,'','onPreviewPage');
+				//buildSearchResultsPrintOut(driverdb_searchLPs($tagset),$tagset,true,true,0,'','onPreviewPage');
+				buildSearchResultsPrintOutWithPreviewer(driverdb_searchLPs($tagset),$tagset,true,true,0,'','onPreviewPage');
 			}
 		?>
-	</div>
-	</td><td id="td-effect">
-	<div id="effect" class="ui-widget-content ui-corner-all">
-		<iframe id="preview" name="preview" class="preview">
-		</iframe>
 	</div>
 	</td></tr></table>
 	<br clear="both" />

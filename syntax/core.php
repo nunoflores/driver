@@ -66,8 +66,23 @@
 		        onExtOpen:function(){},
 		        onExtContentLoad:function(){},
 		        onExtClose:function(){}
-		      });
+		      });		
 		   });
+				
+		function searchClick() {
+				var searchPanel = jQuery("#extruderRight");
+				var searchTabStatus = $("searchTabStatus");
+
+				if (searchTabStatus.value.valueOf() == "true") {
+					searchPanel.closeMbExtruder(true);
+					searchTabStatus.value = "false";
+				} else {
+					searchPanel.openMbExtruder(true);
+					//searchPanel.openPanels();
+					searchTabStatus.value = "true";
+				}
+			}
+		
 		//--><!]]></script>
 		';
 	}
@@ -82,6 +97,8 @@
 		print '<div id="extruderRight2" class="{title:\'Prune/Graft\'}">';
 		print '<iframe width="100%" height="100%" frameborder=0 src="'.$path.'pathPruner.php"></iframe>';
 		print '</div>';
+		print '<form><input id="searchTabStatus" type="hidden" value="false"/>';
+		print '<input id="pruneTabStatus" type="hidden" value="false"/></form>';
 	}
 	
 	function driver_showLPathMenu() {
@@ -91,7 +108,7 @@
 			if (!isset($_SESSION[DOKU_COOKIE]['isTrailing'])) {
 				print '<div class="sidebar-box">';
 				print '<a id="startlpath" class="startlpath" href="">Start Your Learning Path</a>';
-				print '<hr style="margin-top:5px"><div align=right style="margin-top:5px"><a id="searchlpath" class="searchaction" href="">Search...</a></div>';
+				print '<hr style="margin-top:5px"><div align=right style="margin-top:5px"><a id="searchlpath" class="searchaction" href="#" onclick="return searchClick();">Search...</a></div>';
 				print '</div>';
 				return;
 			}
@@ -106,7 +123,7 @@
 			} else {
 				print '<br/><a id="ignore_page" class="ignoreaction" href="">Ignore Page</a>';				
 			}
-			print '<hr style="margin-top:5px"><div align=right style="margin-top:5px"><a id="searchlpath" class="searchaction" href="">Search...</a></div>';
+			print '<hr style="margin-top:5px"><div align=right style="margin-top:5px"><a id="searchlpath" class="searchaction" href="" onclick="return searchClick();">Search...</a></div>';
 			print '</div>';
 			
 	}
@@ -173,24 +190,38 @@
 		return $data;
 	}
 	
-	function printTrailPage($page, $target='', $callback='') {
+	function printTrailPage($page, $target='', $callback='', $previewer='') {
 		$result = '';
 		if (strcmp($page['flag'],'ignore') == 0) {
 			return $result;
 		}
+
 		$url = wl($page['id']);
+		
+		// process callback and previewer
+		$onclick = '';
+		if (strcmp($callback,'') != 0) {
+			if (strcmp($previewer,'') != 0) {		
+				$onclick .= 'onclick="return '.$callback.'(\''.$previewer.'\',\''.$page['id'].'\')"';
+			} else {
+				$onclick .= 'return onclick="return '.$callback.'(\''.$page['id'].'\')"';				
+			}
+			//$url = '#';
+		}
+		
+
 		// id must contains flags for later POST purposes via JavaScript
 		$page_id = $page['id'].'|'.$page['flag'];
 		$add = '<div id="'.$page_id.'" class=trail_page>';
 		if (strcmp($page['flag'],'start') == 0) 
-			$add = '<div id="'.$page_id.'" class="trail_page"><a class="trail_flag_start" target="'.$target.'" href="'.$url.'" onclick="return '.$callback.'('.$page['id'].')"></a>';
+			$add = '<div id="'.$page_id.'" class="trail_page"><a class="trail_flag_start" target="'.$target.'" href="'.$url.'" '.$onclick.'></a>';
 		if (strcmp($page['flag'],'visited') == 0) 
-			$add = '<div id="'.$page_id.'" class="trail_page"><a class="trail_flag_visited" target="'.$target.'" href="'.$url.'" onclick="return '.$callback.'('.$page['id'].')"></a>';
+			$add = '<div id="'.$page_id.'" class="trail_page"><a class="trail_flag_visited" target="'.$target.'" href="'.$url.'" '.$onclick.'></a>';
 		if (strcmp($page['flag'],'landmark') == 0) 
-			$add = '<div id="'.$page_id.'" class="trail_page"><a class="trail_flag_highlight" target="'.$target.'" href="'.$url.'" onclick="return '.$callback.'('.$page['id'].')"></a>';		
+			$add = '<div id="'.$page_id.'" class="trail_page"><a class="trail_flag_highlight" target="'.$target.'" href="'.$url.'" '.$onclick.'></a>';		
 		$result .= $add;
-		$result .= '<a target="'.$target.'" href="'.$url.'" onclick="return '.$callback.'(\''.$page['id'].'\')">'.$page['name'].'</a>';
-		$result .= '</a></div>';
+		$result .= '<a target="'.$target.'" href="'.$url.'" '.$onclick.'>'.$page['name'].'</a>';
+		$result .= '</div>';
 		return $result;
 	}	
 ?>

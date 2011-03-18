@@ -51,11 +51,11 @@ $tags = array_unique($tags);
 	<script src='<?php print $path ?>plugins/star-rating/jquery.rating.js' type="text/javascript" language="javascript"></script>
 	<style>
 		#effect {
-			width: 500px;
+			width: 100%;
 			height: 300px;
 		}
 		.preview {
-			width: 500px;
+			width: 100%;
 			height: 300px;	
 			border=0px;		
 		}
@@ -167,9 +167,9 @@ $tags = array_unique($tags);
 			$( "#showSimilarButton" ).click(function() {
 				showSimilarPaths();
 			});
-	
+		
 			function runEffect() {
-				$( "#effect" ).toggle( "slide", {direction: 'right'}, 200);
+				$( "#effect" ).toggle( "slide", {direction: 'up'}, 200);
 			};
 			
 			$( "#previewButton" ).click(function() {
@@ -197,7 +197,21 @@ $tags = array_unique($tags);
   </head>
   <body>
 	<div class="demo">
-    <table width=100% style="margin-bottom:0px" cellpadding=2px><tr><td><h1> Learning Path </h1></td><td valign=bottom><div align="right"><input id="previewButton" type="button" class="button" value="Show Previewer"><input type="button" class="button" value="Save Unprunned"><input type="button" class="button" value="Don't Save and Close" onclick="window.close()"></input></div></td></tr></table>
+    <table width=100% style="margin-bottom:0px" cellpadding=2px>
+    <tr><td><h1> Learning Path </h1></td>
+        <td valign=bottom><div align="right">
+            <input id="previewButton" type="button" class="button" value="Show Previewer"/>
+            <input type="button" class="button" value="Save Unprunned"/>
+            <!--input type="button" class="button" value="Don't Save and Close" onclick="window.close()"/-->
+        </div></td>
+    </tr>
+	<tr><td id="td-effect" colspan=2>
+	<div id="effect" class="ui-widget-content ui-corner-all">
+		<iframe id="preview" name="preview" class="preview">
+		</iframe>
+	</div>
+	</td></tr>
+	</table>
 	<table><tr><td id="td-lp" width=100%>
 	<div id="learningPath" class='droptrue' >
     <?php
@@ -210,12 +224,8 @@ $tags = array_unique($tags);
 		}	
 		?>
 	</div>
-	</td><td id="td-effect">
-	<div id="effect" class="ui-widget-content ui-corner-all">
-		<iframe id="preview" name="preview" class="preview">
-		</iframe>
-	</div>
-	</td></tr></table>
+	</td></tr>
+	</table>
 	<hr>
 
 	<h2>The Way to Enlightenment</h2>
