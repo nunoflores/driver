@@ -32,6 +32,11 @@
 	 	//jquery
 		print '<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>';
 
+		//jquery No conflict directive
+		print '<script type="text/javascript"><!--
+		 jQuery.noConflict(); 
+		--></script>';
+		
 		//print '<script type="text/javascript" src="'.$jquery_path.'js/jquery-1.4.4.min.js"></script>';
 		//print '<script type="text/javascript" src="'.$jquery_path.'js/jquery-ui-1.8.7.custom.min.js"></script>';
 
@@ -43,7 +48,7 @@
 
 		print '
 		<script type="text/javascript"><!--//--><![CDATA[//><!--
-		$(function(){
+		jQuery(function($){
 		      $("#extruderRight").buildMbExtruder({
 		        position:"right",
 		        width:800,
