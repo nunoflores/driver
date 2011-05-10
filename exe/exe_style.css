@@ -81,3 +81,18 @@ a {
 .button {
 	margin-top: 5px;
 }
+
+.driver_rbox {
+	    font: 0.75em;
+	    background-image:url('../images/bc_bg.png'); 
+	    %background-repeat:repeat-x;
+	    %height:300px;
+	    line-height:30px;
+	    border:solid 1px #cacaca;
+	    width:100%;
+	    overflow:none;
+	    float:left;
+	    clear: right;
+	    margin:0px;
+	    padding:0px;
+}

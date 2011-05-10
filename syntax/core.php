@@ -67,21 +67,24 @@
 		        onExtContentLoad:function(){},
 		        onExtClose:function(){}
 		      });		
+		      $("#extruderRight3").buildMbExtruder({
+		        position:"top",
+		        width:400,
+				height:"auto",
+		        extruderOpacity:1,
+		        textOrientation:"bt",
+		        onExtOpen:function(){},
+		        onExtContentLoad:function(){},
+		        onExtClose:function(){}
+		      });		
 		   });
 				
 		function searchClick() {
-				var searchPanel = jQuery("#extruderRight");
-				var searchTabStatus = $("searchTabStatus");
-
-				if (searchTabStatus.value.valueOf() == "true") {
-					searchPanel.closeMbExtruder(true);
-					searchTabStatus.value = "false";
-				} else {
-					searchPanel.openMbExtruder(true);
-					//searchPanel.openPanels();
-					searchTabStatus.value = "true";
-				}
-			}
+				var searchPanel = jQuery("#extruderRight2");
+				searchPanel.openMbExtruder(true);
+				searchPanel.openPanels();
+				return false;
+		}
 		
 		//--><!]]></script>
 		';
@@ -91,43 +94,53 @@
 		// mb.extruder ui
 		$path = DOKU_BASE.'lib/plugins/driver/exe/';
 		
-		print '<div id="extruderRight" class="{title:\'Search\'}">';
-		print '<iframe width="100%" height="100%" frameborder=0 src="'.$path.'pathSearch.php"></iframe>';
-		print '</div>';
-		print '<div id="extruderRight2" class="{title:\'Prune/Graft\'}">';
+		if (!isLoggedIn()) return;
+		
+		print '<div id="extruderRight" class="{title:\'Prune/Graft\'}">';
 		print '<iframe width="100%" height="100%" frameborder=0 src="'.$path.'pathPruner.php"></iframe>';
 		print '</div>';
-		print '<form><input id="searchTabStatus" type="hidden" value="false"/>';
-		print '<input id="pruneTabStatus" type="hidden" value="false"/></form>';
+		print '<div id="extruderRight2" class="{title:\'Search\'}">';
+		print '<iframe width="100%" height="100%" frameborder=0 src="'.$path.'pathSearch.php"></iframe>';
+		print '</div>';
+		if (isset($_SESSION[DOKU_COOKIE]['isTrailing'])) {
+			print '<div id="extruderRight3" class="{title:\'Hint\'}">';
+			print '<iframe width="100%" height="300" frameborder=0 src="'.$path.'recommend.php"></iframe>';
+			print '</div>';
+		}
 	}
 	
 	function driver_showLPathMenu() {
 			// show only if user is logged in.
-			if (!isLoggedIn()) return;
+			if (!isLoggedIn()) {
+				// clear LP
+				unset($_SESSION[DOKU_COOKIE]['isTrailing']);
+				$_SESSION[DOKU_COOKIE]['trail'] = array();
+				$_SESSION[DOKU_COOKIE]['ignore'] = array();
+				return;
+			}
 			
 			if (!isset($_SESSION[DOKU_COOKIE]['isTrailing'])) {
 				print '<div class="sidebar-box">';
-				print '<a id="startlpath" class="startlpath" href="">Start Your Learning Path</a>';
+				print '<a id="startlpath" class="startlpath" href="#">Start Your Learning Path</a>';
 				print '<hr style="margin-top:5px"><div align=right style="margin-top:5px"><a id="searchlpath" class="searchaction" href="#" onclick="return searchClick();">Search...</a></div>';
 				print '</div>';
 				return;
 			}
 			
 			print '<div class="sidebar-box">';
-			print '<a id="stoplpath" class="stoplpath" href="">Stop Your Learning Path</a>';
+			print '<a id="stoplpath" class="stoplpath" href="#">Stop Your Learning Path</a>';
 			print '<hr style="margin-top:5px"><div class="driver_trailing_menu_title" >Page Actions</div>';
-			print '<a id="mark_landmark" class="trail_flag_highlight" href="">Mark as Landmark</a>';
+			print '<a id="mark_landmark" class="trail_flag_highlight" href="#">Mark as Landmark</a>';
 			$ignore = $_SESSION[DOKU_COOKIE]['ignore'];
 			if (array_key_exists(getID(), $ignore)) {
-				print '<br/><span style="margin-left:20px">Page Ignored (<a id="reactivate_page" class="reactivateaction" href="">Reactivate</a>)</span>';				
+				print '<br/><span style="margin-left:20px">Page Ignored (<a id="reactivate_page" class="reactivateaction" href="#">Reactivate</a>)</span>';				
 			} else {
 				print '<br/><a id="ignore_page" class="ignoreaction" href="">Ignore Page</a>';				
 			}
-			print '<hr style="margin-top:5px"><div align=right style="margin-top:5px"><a id="searchlpath" class="searchaction" href="" onclick="return searchClick();">Search...</a></div>';
-			print '</div>';
-			
+			print '<hr style="margin-top:5px"><div align=right style="margin-top:5px"><a id="searchlpath" class="searchaction" href="#" onclick="return searchClick();">Search...</a></div>';
+			print '</div>';			
 	}
-	
+		
 	require_once(DOKU_INC.'inc/parserutils.php');
 	function driver_showLearningPath($render=true) {
 		// show only if user is logged in.
@@ -179,10 +192,11 @@
 		$data = array();
 		foreach ($trail as $jump) {
 			$pageId = $jump['page'];
-			$name = noNSorNS($pageId);
+			$name = noNSorNS($pageId);	
 			$title = get_first_heading($pageId);
 			if (isset($title)) $name = $title;
-			$r['id'] = $pageId;
+			$r['id'] = $pageId;			
+			$r['section']= $jump['section'];
 			$r['name'] = $name;
 			$r['flag'] = $jump['flag'];
 			$data[] = $r;
@@ -190,37 +204,85 @@
 		return $data;
 	}
 	
-	function printTrailPage($page, $target='', $callback='', $previewer='') {
+	/* $page is expect to have the following structure
+	*
+	*  page['id]
+	*  page['section']
+	*  page['name']
+	*  page['flag']
+	*  
+	*/ 
+	function printTrailPage($page, $target='', $callback='', $previewer='', $div_class = 'trail_page', $count=0) {
+
 		$result = '';
 		if (strcmp($page['flag'],'ignore') == 0) {
 			return $result;
 		}
 
 		$url = wl($page['id']);
+		$label = $page['name'];
+		$linkClass = '';
+		$tooltip = $label;
+		$sectionId = '';
+		
+		// check is its section
+		$isSection = isset($page['section']);
+		
+		// parse section data to see how its encoded and decode it...
+		// it can be (1) the section title, or (2) in the format: <sectionId>'='<section title>
+		$sectionParts = explode("=",$page['section']);
+		if (sizeof($sectionParts) > 1) {
+			$page['section'] = $sectionParts[1];
+		}
+		 
+		if ($isSection) {
+			$sectionId = sectionId($page['section'],$check);
+			$url .= '#'.$sectionId;
+			$label = $page['section'].' <sub>('.substr($label,0,5).'...)</sub>';
+			$linkClass = 'class="trail_section_link"';
+			$tooltip = $page['section'].' (in ['.$page['name'].'])';
+		}
 		
 		// process callback and previewer
 		$onclick = '';
 		if (strcmp($callback,'') != 0) {
-			if (strcmp($previewer,'') != 0) {		
-				$onclick .= 'onclick="return '.$callback.'(\''.$previewer.'\',\''.$page['id'].'\')"';
+			if (strcmp($previewer,'') != 0) {	
+				// pageSearch case	
+				$onclick .= 'onclick="return '.$callback.'(\''.$previewer.'\',\''.$page['id'].'\', \''.$sectionId.'\')"';
 			} else {
-				$onclick .= 'return onclick="return '.$callback.'(\''.$page['id'].'\')"';				
+				// pathPruner case
+				$onclick .= 'return onclick="return '.$callback.'(\''.$page['id'].'\', \''.$sectionId.'\')"';				
 			}
 			//$url = '#';
 		}
 		
 
 		// id must contains flags for later POST purposes via JavaScript
-		$page_id = $page['id'].'|'.$page['flag'];
-		$add = '<div id="'.$page_id.'" class=trail_page>';
+		$page_id = $page['id'];
+		if ($isSection) $page_id .= '#'.$sectionId.'='.$page['section'];
+		$page_id .= '|'.$page['flag'];
+		
+		// main div, no flag
+		$add = '<div id="'.$page_id.'" class="'.$div_class.'">';
+		
+		//recommendation count
+		if ($count > 0) {
+			$add .= '<div class="recommend_count">('.$count.')</div>';
+		}
+		
+		//flag
 		if (strcmp($page['flag'],'start') == 0) 
-			$add = '<div id="'.$page_id.'" class="trail_page"><a class="trail_flag_start" target="'.$target.'" href="'.$url.'" '.$onclick.'></a>';
+			$add .= '<a class="trail_flag_start" target="'.$target.'" href="'.$url.'" '.$onclick.'></a>';
 		if (strcmp($page['flag'],'visited') == 0) 
-			$add = '<div id="'.$page_id.'" class="trail_page"><a class="trail_flag_visited" target="'.$target.'" href="'.$url.'" '.$onclick.'></a>';
+			$add .= '<a class="trail_flag_visited" target="'.$target.'" href="'.$url.'" '.$onclick.'></a>';
 		if (strcmp($page['flag'],'landmark') == 0) 
-			$add = '<div id="'.$page_id.'" class="trail_page"><a class="trail_flag_highlight" target="'.$target.'" href="'.$url.'" '.$onclick.'></a>';		
+			$add .= '<a class="trail_flag_highlight" target="'.$target.'" href="'.$url.'" '.$onclick.'></a>';		
 		$result .= $add;
-		$result .= '<a target="'.$target.'" href="'.$url.'" '.$onclick.'>'.$page['name'].'</a>';
+		
+		// link
+		$result .= '<a '.$linkClass.' title="'.$tooltip.'" target="'.$target.'" href="'.$url.'" '.$onclick.'>'.$label.'</a>';
+		
+		// end main div
 		$result .= '</div>';
 		return $result;
 	}	

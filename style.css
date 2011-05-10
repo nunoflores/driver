@@ -88,6 +88,48 @@ td.driver_dbox_table_incoming_column {
 	text-shadow: white 1px 1px;
 }
 
+.trail_section_link {
+	background-image: url('images/section.png');
+	background-repeat:no-repeat; 
+    background-position:left;
+	padding-left: 18px;
+}
+
+.trail_page_recommend 
+{
+	list-style-type:none;
+    %float:left;
+    clear: right;
+    height:30px;
+    display:block;
+    %background-image:url('images/bc_separator.png'); 
+    %background-repeat:no-repeat; 
+    %background-position:right;
+    padding-right: 15px !important;
+	padding-left: 9px;
+    text-decoration: none;
+    color:#454545;
+	text-shadow: white 1px 1px;
+}
+
+div.recommend_count 
+{
+	font-size:9px;
+	list-style-type:none;
+    float:left;
+    clear:none;
+    height:30px;
+    display:block;
+    background-image:url('images/bc_separator.png'); 
+    background-repeat:no-repeat; 
+    background-position:left;
+    padding-right: 5px;
+	padding-left: 15px;
+    text-decoration: none;
+    color:#454545;
+	text-shadow: white 1px 1px;
+}
+
 .trail_flag_start {
 	background-image: url('images/start.png');
 	background-repeat:no-repeat; 
@@ -163,4 +205,36 @@ td.driver_dbox_table_incoming_column {
 	font-style: italic;
 	color: #aaaaaa;
 	padding: 1px;
+}
+
+.likeLink {
+	font-size: 10px;
+	background-image: url('images/like.png');
+	background-repeat:no-repeat; 
+    background-position:left;
+	padding-left: 18px;
+	vertical-align:bottom;
+}
+
+table.driver_rbox_table {
+	width: 100%;
+	border-bottom: 1px solid #000000;
+	padding: 3px;
+}
+
+td.driver_rbox_table_title_column {
+	border-bottom: 1px solid #cccccc;
+	width: 50%;
+	text-align: right;
+	background-color: #F0F9FA;
+	#padding-right: 18px;
+	#background-image: url('images/outgoing.png');
+	#background-repeat: no-repeat;
+	#background-position: right;
+}
+
+td.driver_rbox_table_column {
+	vertical-align: top;
+	text-align: right;
+	#background-color: #F2FFFD;
 }

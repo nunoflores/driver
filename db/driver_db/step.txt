@@ -1,4 +1,4 @@
-lp#order#pageid#flag
+lp#ord#pageid#flag
 int#int#str#str
 ###
 1#0#page_1#start
@@ -28,3 +28,23 @@ int#int#str#str
 9#0#start#start
 9#1#plugins#
 9#2#templates#landmark
+10#0#page_1#start
+10#1#start#
+11#0#plugins#start
+11#1#start#
+11#2#start%hframework_generics=Framework Generics#visited
+12#0#start#start
+12#1#start%hwhat_is_flake=What is FLAKE ?#start
+13#0#start#start
+13#1#start%hgetting_started=Getting Started#start
+13#2#start%hwhat_is_flake=What is FLAKE ?#start
+14#0#plugins#start
+14#1#templates#
+15#0#start#start
+15#1#page_1#
+16#0#start#start
+16#1#start:another_page#
+17#0#start#start
+17#1#metadata%htemplates_types=Templates/Types#visited
+18#0#start#start
+18#1#templates:tpl_refguide#

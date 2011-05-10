@@ -23,7 +23,8 @@
 	
 	// for now, just print the number of lps found...
 	$tagset = array();
-	buildSearchResultsPrintOut($result,$tagset, false, false, $equal);
+
+	$result = buildSearchResultsPrintOut($result,$tagset, false, false, $equal);
 	
 	//print print_r($result,true);
 		

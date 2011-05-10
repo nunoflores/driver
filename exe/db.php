@@ -1,7 +1,7 @@
 <?php
 
 //
-// Learning Paths Plug-in database configuration file
+// Driver Plug-in database configuration file
 // Author: Nuno Flores, 2001-01-15
 // version: 1.0
 //
@@ -35,24 +35,38 @@ $DB_DIR = DOKU_INC."lib/plugins/driver/db/";
 define("API_HOME_DIR" ,$API_HOME_DIR);
 define("DB_DIR" ,$DB_DIR);
 
+// Not quite the SINGLETON, but close...more like a TENNENT
+class DatabaseAccessor {
+	private static $instance;
+	
+	private function __construct() {
+	}
+	
+	public static function getInstance() {
+		if (!self::$instance) 
+		    { 
+				if (!file_exists(DB_DIR . "driver_db")) {
+					$db = new Database(ROOT_DATABASE);
+					$db->executeQuery("CREATE DATABASE driver_db");
+				}	
+		        self::$instance = new Database("driver_db"); 
+		    } 
+
+		return self::$instance;
+	}
+}
+
 // builds database infrastructure to make sure all is there.
 function driverdb_startDb() {
 	
-	// create database
-	if (!file_exists(DB_DIR . "driver_db")) {
-		$db = new Database(ROOT_DATABASE);
-		$db->executeQuery("CREATE DATABASE driver_db");
-	}	
-
-	// REFACTOR TO SINGLETON!!!
-	$db = new Database("driver_db");
+	$db = DatabaseAccessor::getInstance();
 	
 	// create tables
 	if (!file_exists(DB_DIR . "driver_db/lp.txt"))
 		$db->executeQuery("CREATE TABLE lp (id inc, tags str, rank str)");
 
 	if (!file_exists(DB_DIR . "driver_db/step.txt"))
-		$db->executeQuery("CREATE TABLE step (lp int, order int, pageid str, flag str)");
+		$db->executeQuery("CREATE TABLE step (lp int, ord int, pageid str, flag str)");
 
 	if (!file_exists(DB_DIR . "driver_db/rating.txt"))
 		$db->executeQuery("CREATE TABLE rating (lp int, user str, rating int)");
@@ -179,10 +193,14 @@ function driverdb_getLP($lpid,$tags='') {
 	$path['tags'] = $tags;
 	
 	$path['path'] = array();
-	$steps = $db->executeQuery("SELECT * FROM step WHERE lp = ".$lpid." ORDER BY order");
+	$steps = $db->executeQuery("SELECT * FROM step WHERE lp = ".$lpid." ORDER BY ord");
 	while($steps->next()) {
 		$step = array();
-		$step['page'] = $steps->getCurrentValueByName("pageid");
+		// parse pageId and sectionId
+		$id = explode("#",$steps->getCurrentValueByName("pageid"));
+		$step['page'] = $id[0];
+		$step['section'] = $id[1];
+		//$step['page'] = $steps->getCurrentValueByName("pageid");
 		$step['flag'] = $steps->getCurrentValueByName("flag");
 		$path['path'][] = $step;			
 	}
@@ -205,7 +223,7 @@ function driverdb_getSimilarLPs($lp, &$result, &$equal){
 	$order = 0;
 	$pool = array();
 	foreach ($lp as $pageid) {
-		$resultSet = $db->executeQuery("SELECT lp, order as o FROM step WHERE o = ".$order." AND pageid LIKE '".$pageid."'");
+		$resultSet = $db->executeQuery("SELECT lp, ord as o FROM step WHERE o = ".$order." AND pageid LIKE '".$pageid."'");
 		while($resultSet->next()) {
 			$id = $resultSet->getCurrentValueByName("lp");
 			if (!isset($pool[$id])) {
@@ -251,38 +269,37 @@ function driverdb_getSimilarLPs($lp, &$result, &$equal){
 // returns id of matching lp already in the database
 function driverdb_getLPMatchId($lp) {
 
-	$db = driverdb_startDb();	
+		$db = driverdb_startDb();	
 
-	// lp should be array of pageids|flag.	
-	$order = 0;
-	foreach ($lp as $pageid) {
-		$data = explode('|',$pageid);
-		$more = array();
-		error_log(print_r($data,true));
-		$resultSet = $db->executeQuery("SELECT lp, order as o FROM step WHERE o = ".$order." AND pageid LIKE '".$data[0]."'");
-		while($resultSet->next()) {
-			$id = $resultSet->getCurrentValueByName("lp");
-			$more[] = $id;
-		}		
-		if (!isset($exact)) {
-			$exact = array();
-			$exact = $more;
-		} else {
-			$exact = array_intersect($exact, $more);
+		// lp should be array of pageids|flag.	
+		$order = 0;
+		foreach ($lp as $pageid) {
+			$data = explode('|',$pageid);
+			$more = array();
+			error_log(print_r($data,true));
+			$resultSet = $db->executeQuery("SELECT lp, ord as o FROM step WHERE o = ".$order." AND pageid LIKE '".$data[0]."'");
+			while($resultSet->next()) {
+				$id = $resultSet->getCurrentValueByName("lp");
+				$more[] = $id;
+			}		
+			if (!isset($exact)) {
+				$exact = array();
+				$exact = $more;
+			} else {
+				$exact = array_intersect($exact, $more);
+			}
+			$order++;
 		}
-		$order++;
-	}
-	if (count($exact) > 0) return $exact[0];
-	return -1;
+		if (count($exact) > 0) return $exact[0];
+		return -1;
 }
-
-
+	
 // saves a new learning path to the database
 function driverdb_saveLP($learningPath, $tagsArray) {
 	//Start database
 	$db = driverdb_startDb();
 	
-	// does as equal lp already exists? if so, merge tags
+	// does an equal lp already exists? if so, merge tags
 	if (($id = driverdb_getLPMatchId($learningPath)) > 0) {
 		// fetch tags
 		$resultSet = $db->executeQuery("SELECT tags FROM lp WHERE id = ".$id);
@@ -312,29 +329,66 @@ function driverdb_saveLP($learningPath, $tagsArray) {
 	$order = 0;
 	foreach ($learningPath as $step) {
 		$data = explode('|',$step);
-		$db->executeQuery("INSERT INTO step(lp,order,pageid,flag) VALUES (".$lp.",".$order.",'".$data[0]."','".$data[1]."')");
+		$db->executeQuery("INSERT INTO step(lp,ord,pageid,flag) VALUES (".$lp.",".$order.",'".$data[0]."','".$data[1]."')");
 		$order++;
 	}
 }
 
+// returns the next steps most LPs take from a particular page ($pageId)
+function driverdb_getMostNextSteps($pageId) {
+	$db = driverdb_startDb();	
+
+	error_log("DB_DIR:".DB_DIR."\nAPI_HOME_DIR:".API_HOME_DIR);
+
+	error_log("query: "."SELECT lp , ord FROM step WHERE pageid='".$pageId."'");
+	// Get all LPs where pageId is.
+	
+	$allLPs = $db->executeQuery("SELECT * FROM step WHERE pageid = '".$pageId."'");
+	
+	// Fetch all next steps
+	while($allLPs->next()) {
+		$lp = $allLPs->getCurrentValueByName("lp");
+		$order = $allLPs->getCurrentValueByName("ord");
+		$result = $db->executeQuery("SELECT * FROM step WHERE lp = ".$lp." AND ord = ".($order+1));
+		while ($result->next()) {
+			$nextStep = $result->getCurrentValueByName("pageid");
+			if (isset($recommend[$nextStep])) {
+				$recommend[$nextStep]++;
+			} else {
+				$recommend[$nextStep] = 1;
+			}
+		}
+	}	
+	arsort($recommend);
+	return $recommend;
+}
+
 // DEBUG function just for printing out the database contents.
 function driverdb_printout() {
-	$db = driverdb_startDb();
+	$db = driverdb_startDb();	
+	
+	print "<h2>recommend</h2>";
+	
+	print_r(driverdb_getMostNextSteps('start'));
+	
+	print "<h2>test</h2>";
+	$lp = 3;
+	$order = 0; 
+	$resultSet = $db->executeQuery("SELECT pageid, ord AS x FROM step WHERE lp=2 AND x=1");
+	$resultSet->dump();
+
 	print "<h2>lp</h2>";
 	$resultSet = $db->executeQuery("SELECT * FROM lp");
-	while($resultSet->next()) {
-		echo "<br>" . $resultSet->getCurrentValueByName("id") . ": [" . $resultSet->getCurrentValueByName("tags") . "]: ".$resultSet->getCurrentValueByName("rank") ."<br>";
-	}
+	$resultSet->dump();
+	
 	print "<h2>steps</h2>";
 	$resultSet = $db->executeQuery("SELECT * FROM step");
-	while($resultSet->next()) {
-		echo "<br>" . $resultSet->getCurrentValueByName("lp") . ": " . $resultSet->getCurrentValueByName("order") . ": ".$resultSet->getCurrentValueByName("pageid") .": ".$resultSet->getCurrentValueByName("flag") ."<br>";
-	}
+	$resultSet->dump();
+
 	print "<h2>rating</h2>";
 	$resultSet = $db->executeQuery("SELECT * FROM rating");
-	while($resultSet->next()) {
-		echo "<br>" . $resultSet->getCurrentValueByName("lp") . ": " . $resultSet->getCurrentValueByName("user") . ": ".$resultSet->getCurrentValueByName("rating") ."<br>";
-	}
+	$resultSet->dump();
+
 }
 
 ?>

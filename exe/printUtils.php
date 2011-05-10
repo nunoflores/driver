@@ -46,51 +46,7 @@ function printApplyRatingTable($lp, $user) {
 }
 
 // prints out the results of the an LPs search
-// TODO: deprecate this one to ...WithPreviewer
-function buildSearchResultsPrintOut($results, $tagsSearched, $count=true, $applyRating=true, $match=0, $target='', $callback='') {
-	//print_r($results);
-	if (count($results) == 0) {
-		if ($count) print '<b>Found 0 learning paths.<br/>';
-		return;
-	}
-	if ($count) print 'Found <b>'.count($results).'</b> learning paths.<br/>';
-	$user = $_SESSION[DOKU_COOKIE]['auth']['user'];
-	foreach ($results as $contents) {
-		$isMatch='';
-		if ($match == $contents['id']) $isMatch='style="border: 2px solid #333333"';
-		$pages = processTrailArrayForPrinting($contents['path']);
-		print '<table cellpadding=0 cellspacing=0 width=100% style="border-bottom:1px solid #aaaaaa">';
-		if ($applyRating) {
-			print '<tr><td colspan=2>';
-			print '<form action="applyRating.php">';
-			print printApplyRatingTable($contents['id'], $user);
-			print '</form></td></tr>';
-		}
-		print '<tr><td colspan=2><div class="searchResultBar" '.$isMatch.'>';
-		foreach ($pages as $page) 
-			print printTrailPage($page, $target, $callback);	
-		print '</div></td></tr>';	
-		print '<tr><td><div style="font-size:9px;padding-bottom:5px">tags: ';
-		// highlight tags
-		//print '<span style="font-size:9px">tags: ';
-		$tags = explode(" ", trim($contents['tags']));
-		foreach ($tags as $tag) {
-			if (array_search($tag, $tagsSearched) > -1) {
-				print '<b>'.$tag.'</b> ';
-			} else {
-				print $tag.' ';
-
-			}
-		}
-		print '</div></td><td align=right style="padding-bottom:5px">';
-		print printShowRatingTable($contents['id'],driverdb_getRating($contents['id']));	
-		print '</td></tr></table>';
-	}
-}
-
-// prints out the results of the an LPs search with a previewer
-// TODO: override "...WithoutPreviewer"
-function buildSearchResultsPrintOutWithPreviewer($results, $tagsSearched, $count=true, $applyRating=true, $match=0, $target='', $callback='') {
+function buildSearchResultsPrintOut($results, $tagsSearched, $count=true, $applyRating=true, $match=0, $target='', $callback='', $previewing=false) {
 
 	// no results
 	if (count($results) == 0) {
@@ -116,35 +72,13 @@ function buildSearchResultsPrintOutWithPreviewer($results, $tagsSearched, $count
 		$pages = processTrailArrayForPrinting($contents['path']);
 	
 	    // composing result line using an html table
-		print '<table cellpadding=0 cellspacing=0 width=100% style="border-bottom:1px solid #aaaaaa">';
+		print '<table cellpadding=0 cellspacing=0 width=100% >';
+		
 		
 		print '<tr>';
-		
-		// toggle previewer 
-		print '<td>';
-		print '<input style="font-size:9px" id="previewButton'.$resultsCounter.'"';
-		print ' type="button" class="button" value="Show Previewer"';
-		print ' onClick="togglePreviewer(effect'.$resultsCounter.', previewButton'.$resultsCounter.')">';
-		print '</td>';
-			
-		// if user can rate result is enabled ($applyRating)
-		if ($applyRating) {
-			print '<td>';
-			print '<form action="applyRating.php">';
-			print printApplyRatingTable($contents['id'], $user);
-			print '</form></td></tr>';
-		}
-	
-		print '</tr>';
-		
-		// path printing
-		print '<tr><td colspan=2><div class="searchResultBar" '.$isMatch.'>';
-		foreach ($pages as $page) 
-			print printTrailPage($page, $target, $callback, 'preview'.$resultsCounter);	
-		print '</div></td></tr>';	
-		
-		// printing tags
-		print '<tr><td><div style="font-size:9px;padding-bottom:5px">tags: ';
+
+		// printing tags		
+		print '<td><div style="font-size:9px;padding-top:5px">tags: ';
 
 		$tags = explode(" ", trim($contents['tags']));
 		foreach ($tags as $tag) {
@@ -158,17 +92,54 @@ function buildSearchResultsPrintOutWithPreviewer($results, $tagsSearched, $count
 		}
 		
 		// printing overall rating
-		print '</div></td><td align=right style="padding-bottom:5px">';
+		print '</div></td><td align=right style="padding-top:5px">';
 		print printShowRatingTable($contents['id'],driverdb_getRating($contents['id']));	
-		print '</td></tr>';
+		print '</td>';
+		
+		print '</tr>';
+		
+		
+		// path printing
+		print '<tr><td colspan=2><div class="searchResultBar" '.$isMatch.'>';
+		foreach ($pages as $page) 
+			if ($previewing) {
+				print printTrailPage($page, $target, $callback, 'preview'.$resultsCounter);	
+			} else {
+				print printTrailPage($page, $target, $callback);					
+			}
+		print '</div></td></tr>';	
+		
+		
+		print '<tr>';
+		
+		// toggle previewer 
+		if ($previewing) {
+			print '<td>';
+			print '<input style="font-size:9px" id="previewButton'.$resultsCounter.'"';
+			print ' type="button" class="button" value="Show Previewer"';
+			print ' onClick="togglePreviewer(effect'.$resultsCounter.', previewButton'.$resultsCounter.')">';
+			print '</td>';
+		}
+			
+		// if user can rate result is enabled ($applyRating)
+		if ($applyRating) {
+			print '<td>';
+			print '<form action="applyRating.php">';
+			print printApplyRatingTable($contents['id'], $user);
+			print '</form></td>';
+		}
+	
+		print '</tr>';
 		
 		// printing previewer (hidden)
-		print '<tr><td id="td-effect" colspan=2>
-			<div id="effect'.$resultsCounter.'" class="effect">
-				<iframe id="preview'.$resultsCounter.'" name="preview" class="preview">
-				</iframe>
-			</div>
-			</td></tr>';
+		if ($previewing) {
+			print '<tr><td id="td-effect" colspan=2>
+					<div id="effect'.$resultsCounter.'" class="effect">
+						<iframe id="preview'.$resultsCounter.'" name="preview" class="preview">
+						</iframe>
+					</div>
+				</td></tr>';
+		}
 		
 		print '</table>';
 		

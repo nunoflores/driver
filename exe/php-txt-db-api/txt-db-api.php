@@ -39,7 +39,6 @@ $API_HOME_DIR="/myhomepage/html/php-api/";
 //$API_HOME_DIR="c:\\programme\\apache\\htdocs\\php-api\\";	
 
 
-
 // Directory where the Database Directories are located
 // THIS IS NOT THE FULL PATH TO A DATABASE, ITS THE PATH
 // TO A DIRECTORY CONTAINING 1 OR MORE DATABASE DIRECTORIES
@@ -48,8 +47,6 @@ $API_HOME_DIR="/myhomepage/html/php-api/";
 
 $DB_DIR="/myhomepage/html/databases/";			
 //$DB_DIR="c:\\programme\\apache\\htdocs\\php-api-tests\\";			
-
-
 
 
 // ----------- IGNORE FROM HERE (Users) --------------

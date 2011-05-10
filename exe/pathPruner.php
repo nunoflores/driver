@@ -16,23 +16,7 @@ require_once(DOKU_INC.'inc/auth.php');
 require_once(DOKU_INC.'inc/parserutils.php');
 
 require_once(DOKU_INC.'lib/plugins/driver/syntax/core.php');
-
 $path = DOKU_BASE.'lib/plugins/driver/exe/jquery/';
-
-//parse tags
-
-session_start();
-$trail = $_SESSION[DOKU_COOKIE]['trail'];
-$tags = array();
-foreach ($trail as $page) {
-	$pagetags = p_get_metadata($page['page'],'subject');
-	$tags = array_merge($tags, $pagetags);
-	//print_r($tags);
-}
-//print_r($tags);
-//WISH: Produce draggable tag cloud...look at cloud plug-in...
-$tags = array_unique($tags);
-
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -65,10 +49,27 @@ $tags = array_unique($tags);
 			overflow:auto;
 			background-color: #f6f6f6;
 		}
+		#similarPathsFrame {
+			width:100%;
+			height:300px;
+			border=0px;		
+		}
+		
 		</style>
 		<script>
-		function submitLP() {
-			var lpath = $( "#finalPath" ).sortable('toArray');
+		
+		function submitUnprunnedLP() {
+			$confirm = confirm('Are you sure you want to save the Learning Path unprunned?');
+			if (!$confirm) return;	
+			submitLP("#learningPath");		
+		}
+		
+		function submitFinalLP() {
+			submitLP("#finalPath");
+		}
+		
+		function submitLP(source) {
+			var lpath = $(source).sortable('toArray');
 			if (lpath.length == 0) {
 				alert('No Learning Path to save.');
 				return;
@@ -80,11 +81,11 @@ $tags = array_unique($tags);
 				tags = tags.concat(moretags); 
 			}
 			if (tags.length == 0) {
-				alert('Cannot save Learning Path with assigned tags.');
+				alert('Cannot save Learning Path with no assigned tags.');
 				return;
 			}
-			$.post('submitLP.php', {lpath: lpath, tags: tags}, function(data) {});
-			window.close();
+			$.post('submitLP.php', {lpath: lpath, tags: tags}, function(data) {alert('Learning Path saved.');window.location.reload(true);});
+			
 		}
 		function applyRating(data) {
 			if (data == 0) return;
@@ -112,8 +113,8 @@ $tags = array_unique($tags);
 			function findSimilar() {
 				// hide if not yet hidden.
 				document.getElementById("showSimilarButton").value = 'Show';
-				$ ('showSimilarButton').hide();
-				$ ('showSimilarPaths').hide();
+				$ ('#showSimilarButton').hide();
+				$ ('#showSimilarPaths').hide();
 				document.getElementById("match").innerHTML = '';
 				// searching
 				document.getElementById("similarPaths").innerHTML = "Searching for similar paths...";
@@ -136,10 +137,14 @@ $tags = array_unique($tags);
 					if (values[0] > 0) {
 						document.getElementById("showSimilarButton").style.display = 'inline';
 						//document.getElementById("showSimilarPaths").innerHTML = result[1];
-						//$( "#showSimilarPaths" ).show();
 						$( "#showSimilarPaths" ).html(result[1]);
-						//$( "#showSimilarPaths" ).hide();
-						
+						//$( "#similarPathsFrame" ).html(result[1]);
+						//document.getElementById("similarPathsFrame").contentDocument.body.innerHTML="";
+						//document.getElementById("similarPathsFrame").contentDocument.write(result[1]);
+						//$( "#similarPathsFrame" ).contentDocument.body.innerHTML="";
+						//$( "#similarPathsFrame" ).contentDocument.write(result[1]);
+						$(".star").rating();						
+						//alert(result[1]);
 					}				
 				});
 			}
@@ -184,11 +189,14 @@ $tags = array_unique($tags);
 			});
 			$( "#effect" ).hide();
 			$ ( "#showSimilarPaths" ).hide();
-		});
-		function onPreviewPage(pageid) {
+			document.getElementById("similarPathsFrame").contentDocument.body.innerHTML="<b>hello</b>"
+			
+		});	
+		function onPreviewPage(pageid, sectionId) {
 			$.post('previewPage.php', {pageid: pageid}, function(data) {
 				document.getElementById("preview").contentDocument.body.innerHTML="";
-				document.getElementById("preview").contentDocument.write(data);					
+				document.getElementById("preview").contentDocument.write(data);
+				document.getElementById("preview").contentWindow.location.hash = "#"+sectionId;
 			});
 			return false;
 		}
@@ -201,7 +209,7 @@ $tags = array_unique($tags);
     <tr><td><h1> Learning Path </h1></td>
         <td valign=bottom><div align="right">
             <input id="previewButton" type="button" class="button" value="Show Previewer"/>
-            <input type="button" class="button" value="Save Unprunned"/>
+            <input type="button" class="button" value="Save Unprunned" onclick="submitUnprunnedLP()"/>
             <!--input type="button" class="button" value="Don't Save and Close" onclick="window.close()"/-->
         </div></td>
     </tr>
@@ -212,7 +220,7 @@ $tags = array_unique($tags);
 	</div>
 	</td></tr>
 	</table>
-	<table><tr><td id="td-lp" width=100%>
+	<table width=100%><tr><td id="td-lp">
 	<div id="learningPath" class='droptrue' >
     <?php
 		session_start();
@@ -251,9 +259,28 @@ $tags = array_unique($tags);
 			<td width=50% colspan=2 style="padding-left:5px">
 				<div id="dragTags" class="dragTags">
 					<?php
+					
+						//parse tags
+						session_start();
+						$trail = $_SESSION[DOKU_COOKIE]['trail'];
+						$tags = array();
+						foreach ($trail as $page) {
+							$pagetags = p_get_metadata($page['page'],'subject');
+							//error_log('page: '.$page['page'].' tags: '.print_r($pagetags,true));
+							if (is_array($pagetags))
+								$tags = array_merge($tags, $pagetags);
+							//print_r($tags);
+						}
+						
+						//error_log("TAGS:".print_r($tags, true));
+						//WISH: Produce draggable tag cloud...look at cloud plug-in...
+						
+						$tags = array_unique($tags);
+					    
 						foreach ($tags as $tag) {
 							print '<div id="'.$tag.'" class="tag">'.$tag.'</div>';
 						}
+						
 					?>
 				</div>
 			</td>
@@ -262,7 +289,7 @@ $tags = array_unique($tags);
 			<td rowspan=2 width="10%" valign=top style="padding-top:6px">Other tags: </td>
 			<td><input id="othertags" type="text" name="tags" value="" style="width:100%"></td>
 			<td></td>
-			<td align=right valign=bottom><span id="match" style="font-style:italic;clear:none;font-size:9px;padding-right:5px"></span><input type="button" class="button" value="Save" onclick="submitLP()"></input></td>
+			<td align=right valign=bottom><span id="match" style="font-style:italic;clear:none;font-size:9px;padding-right:5px"></span><input type="button" class="button" value="Save" onclick="submitFinalLP()"></input></td>
 		</tr>
 		<tr>
 			<td valign=top style="font-size:9px"><i>(space separated)</i></td>
@@ -270,7 +297,7 @@ $tags = array_unique($tags);
 	</table>
 	<br clear="both" />
 
-	</div><!-- End demo -->
+	</div>
   </body>
 </html>
 

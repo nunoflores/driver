@@ -29,7 +29,6 @@ include_once(API_HOME_DIR . "const.php");
 include_once(API_HOME_DIR . "util.php");
 include_once(API_HOME_DIR . "stringparser.php");
 
-
 /**********************************************************************
 								Row
 ***********************************************************************/
@@ -607,6 +606,9 @@ class ResultSet {
 		$index=-1;
 		
 		while(!is_empty_str($elem=$parser->parseNextElementRaw())) {
+		
+			
+			//error_log("********NUNO:".print_r($g_sqlSingleRecFuncs, true));
 		
 			// function  ?
 			if(in_array(strtoupper($elem),$g_sqlSingleRecFuncs)) {

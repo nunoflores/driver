@@ -15,19 +15,16 @@ driver = {
 		var reactivatepage = $('reactivate_page');
         if (start) {
                 addEvent(start, 'click', function(event) {
-                    driver.pathAction('driver_start'); 
                     //event.preventDefault();
                     //event.stopPropagation();
+                    driver.pathAction('driver_start'); 
                     return true; });
         }
         if (stop) {
                 addEvent(stop, 'click', function(event) {
-					var url = DOKU_BASE+'lib/plugins/driver/exe/pathPruner.php';
-					var windowFeatures = 'width='+window.outerWidth+',height='+window.outerHeight+',left=20,top=20,directories=no,location=no,toolbar=no,menubar=no';
-					window.open(url,'LPathpopup',windowFeatures);
-                    driver.pathAction('driver_stop'); 
-                    //event.preventDefault();
+	                //event.preventDefault();
                     //event.stopPropagation();
+					driver.pathAction('driver_stop');
                     return true; });
         }
         if (landmark) {
@@ -63,6 +60,12 @@ driver = {
 	        ajax.setVar('call', action);
 			ajax.setVar('here', getURLparameter('id')); // needed for reactivate action
 
+			var onCompletion = function() {
+				// forces refresh on completion
+				window.location.reload(true);			
+			};
+						
+			ajax.onCompletion = onCompletion;
 	        ajax.runAJAX();
 	        return false;
 
@@ -83,6 +86,26 @@ function getURLparameter( name )
     return "";
   else
     return results[1];
+}
+
+function driver_addSectionJump(title) {
+	//alert(title);
+	
+	var ajax = new sack(DOKU_BASE+'lib/exe/ajax.php');
+        ajax.AjaxFailedAlert = '';
+        ajax.encodeURIString = false;
+
+        ajax.setVar('call', 'driver_sectionLike');
+		ajax.setVar('here', getURLparameter('id'));
+		ajax.setVar('sectionTitle', title);
+		
+		ajax.onCompletion = function() {
+			// forces refresh on completion
+			window.location.reload(true);			
+		};
+
+        ajax.runAJAX();
+        return false;
 }
 
 // vim:ts=4:sw=4:et:enc=utf-8:

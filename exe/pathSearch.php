@@ -85,10 +85,11 @@ $availableTags = substr($availableTags, 0, -1); // remove last comma
 			});			
 		}
 			
-		function onPreviewPage(previewer, pageid) {
+		function onPreviewPage(previewer, pageid, sectionid) {
 			$.post('previewPage.php', {pageid: pageid}, function(data) {
 				document.getElementById(previewer).contentDocument.body.innerHTML="";
-				document.getElementById(previewer).contentDocument.write(data);					
+				document.getElementById(previewer).contentDocument.write(data);
+				document.getElementById(previewer).contentWindow.location.hash = "#"+sectionId;
 			});
 			return false;
 		}
@@ -175,7 +176,7 @@ $availableTags = substr($availableTags, 0, -1); // remove last comma
 				print '<h3>Search results for "'.trim($tags).'"</h3>';
 				$tagset = explode(' ',trim($tags));
 				//buildSearchResultsPrintOut(driverdb_searchLPs($tagset),$tagset,true,true,0,'','onPreviewPage');
-				buildSearchResultsPrintOutWithPreviewer(driverdb_searchLPs($tagset),$tagset,true,true,0,'','onPreviewPage');
+				buildSearchResultsPrintOut(driverdb_searchLPs($tagset),$tagset,true,true,0,'','onPreviewPage',true);
 			}
 		?>
 	</div>

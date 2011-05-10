@@ -10,3 +10,12 @@ inc#str#str
 7#template welcome#0.0
 8#extension filipe#0.0
 9#welcome plugins how-to#0.0
+10#welcome navigation#0.0
+11#overview#0.0
+12#welcome sectiontest#0.0
+13#welcome structure intro#0.0
+14#template#0.0
+15#navigation#0.0
+16#another page#0.0
+17#templates template#0.0
+18#home#0.0
